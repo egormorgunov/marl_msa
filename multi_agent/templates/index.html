@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>The Route-Choosing Service</title>
+    <style>
+        /* Page styling */
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #ffffff; /* Background color changed to white */
+            color: #000; /* Text color changed to black */
+        }
+
+        /* Table styling */
+        table {
+            border-collapse: collapse;
+            margin: 12px auto;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* Container styling */
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            text-align: left;
+        }
+
+        .container > div {
+            flex: 1;
+            text-align: center;
+        }
+
+        /* Graph container 1 styling */
+        .graph-container1 {
+            margin-top: 30px;
+        }
+
+        /* State styling */
+        .state1 {
+            display: inline-block;
+            width: 180px;
+            height: 70px;
+            line-height: 70px;
+            border: 2px solid black;
+            border-radius: 30px;
+            margin: 20px;
+            text-align: center;
+            font-size: 22px;
+        }
+
+        .state1.completed {
+            background-color: blue;
+            color: white;
+        }
+
+        /* Graph container 2 styling */
+        .graph-container2 {
+            margin-top: 30px;
+        }
+
+        /* State styling */
+        .state2 {
+            display: inline-block;
+            width: 180px;
+            height: 70px;
+            line-height: 70px;
+            border: 2px solid black;
+            border-radius: 30px;
+            margin: 20px;
+            text-align: center;
+            font-size: 22px;
+        }
+
+        .state2.completed {
+            background-color: green;
+            color: white;
+        }
+
+        /* Arrow container styling */
+        .arrow-container {
+            position: relative;
+            font-size: 50px;
+        }
+
+        .edge-text {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            white-space: nowrap;
+        }
+
+        /* Weather table styling */
+        .weather-table {
+            width: 70%;
+        }
+
+        .weather-table th:first-child, .weather-table td:first-child {
+            width: 30%;
+        }
+
+        .weather-table th:last-child, .weather-table td:last-child {
+            width: 40%;  /* Adjusted width for the last column */
+        }
+
+        .weather-symbol {
+            font-size: 42px;
+            color: #343333;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        .action-label {
+            margin-top: 5px;
+        }
+
+        /* Episode info styling */
+        .episode-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 50px;
+        }
+
+        .episode-info h3 {
+            margin-right: 10px;
+        }
+
+        /* Header styling */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: left;
+            padding: 10px;
+            background-color: lightgray;
+            margin-left: 120px;
+        }
+
+        .header .weather-symbol {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
+        .header .title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        /* Progress chart styling */
+        .sc-gauge { width: 150px; height: 150px; margin: 30px auto; } /* Smaller size and lower position */
+        .sc-background { position:relative; height:75px; margin-bottom:0px; background-color:#fff; border-radius:150px 150px 0 0; overflow:hidden; text-align:center; }
+        .sc-mask { position:absolute; top:15px; right:15px; left:15px; height:60px; background-color:#ffffff; border-radius:150px 150px 0 0 }
+        .sc-percentage { position:absolute; top:75px; left:-200%; width:400%; height:400%; margin-left:75px; background-color:#00aeef; transform-origin:top center; }
+        .sc-min { float:left; font-size: 24px; margin-right: 20px;} /* Larger font size for min and max */
+        .sc-max { float:right; font-size: 24px; margin-left: 20px;}
+        .sc-value { position:absolute; top:50%; left:0; width:100%;  font-size:32px; font-weight:700 } /* Smaller font size for value */
+
+        .training-info {
+            margin-top: -100px; /* Closer margin to the chart */
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header section -->
+    <div class="header">
+        <span class="weather-symbol">&#9728;</span>
+        <span class="title">The Route-Choosing Service</span>
+    </div>
+
+    <!-- Main content container -->
+    <div class="container">
+        <div>
+            <h2>Current State:</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Action</th>
+                        <th>Reward</th>
+                        <th>Stage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Agent 1</td>
+                        <td id="action1">{{ current_state.action1 }}</td>
+                        <td id="reward1">{{ current_state.reward1 }}</td>
+                        <td id="stage1">{{ current_state.stage1 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Agent 2</td>
+                        <td id="action2">{{ current_state.action2 }}</td>
+                        <td id="reward2">{{ current_state.reward2 }}</td>
+                        <td id="stage2">{{ current_state.stage2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h2>Booking Info:</h2>
+            <table class="booking-table">
+                <thead>
+                    <tr>
+                        <th>Agent</th>
+                        <th>Transport</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Agent 1</td>
+                        <td id="transport1">{{ current_booking.transport1 }}</td>
+                        <td id="status1">{{ current_booking.status1 }}</td>
+                    </tr>
+                    <tr>
+                        <td>Agent 2</td>
+                        <td id="transport2">{{ current_booking.transport2 }}</td>
+                        <td id="status2">{{ current_booking.status2 }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div>
+            <h2>Current Weather:</h2>
+            <table class="weather-table">
+                <thead>
+                    <tr>
+                        <th>Weather Type</th>
+                        <th>Car Coefficient</th>
+                        <th>Train Coefficient</th>
+                        <th>Plane Coefficient</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td id="weather-type">
+                            {% if current_weather.weather_type == "Rain" %}
+                                <span class="weather-symbol">&#127783;</span> Rain
+                            {% elif current_weather.weather_type == "Sun" %}
+                                <span class="weather-symbol">&#9728;</span> Sun
+                            {% else %}
+                                {{ current_weather.weather_type }}
+                            {% endif %}
+                        </td>
+                        <td id="car-coef">{{ current_weather.car_coef }}</td>
+                        <td id="train-coef">{{ current_weather.train_coef }}</td>
+                        <td id="plane-coef">{{ current_weather.plane_coef }}</td>
+                        <td id="weather-time">{{ current_weather.time }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Graph container -->
+    <div class="graph-container1">
+        <h2>Agent Path Visualization:</h2>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <div class="state1 {{ 'completed' if current_state.stage1 >= 0 else '' }}">Start</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+                <div class="edge-text">Take order</div>
+            </div>
+            <div class="state1 {{ 'completed' if current_state.stage1 >= 1 else '' }}">Order taken</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+                <div class="edge-text">Collect weather data</div>
+            </div>
+            <div class="state1 {{ 'completed' if current_state.stage1 >= 2 else '' }}">Data collected</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+                <div class="edge-text">Choose route</div>
+            </div>
+            <div class="state1 {{ 'completed' if current_state.stage1 >= 3 else '' }}">Route chosen</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+                <div class="edge-text">Booking the transport</div>
+            </div>
+            <div class="state1 {{ 'completed' if current_state.stage1 >= 6 else '' }}">Service booked</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+                <div class="edge-text">Complete order</div>
+            </div>
+            <div class="state1 {{ 'completed' if current_state.stage1 == 7 else '' }}">Order completed</div>
+        </div>
+    </div>
+
+    <div class="graph-container2">
+        <h2></h2>
+        <div style="display: flex; justify-content: center; align-items: center;">
+            <div class="state2 {{ 'completed' if current_state.stage2 >= 0 else '' }}">Start</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+            </div>
+            <div class="state2 {{ 'completed' if current_state.stage2 >= 1 else '' }}">Order taken</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+            </div>
+            <div class="state2 {{ 'completed' if current_state.stage2 >= 2 else '' }}">Data collected</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+            </div>
+            <div class="state2 {{ 'completed' if current_state.stage2 >= 3 else '' }}">Route chosen</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+            </div>
+            <div class="state2 {{ 'completed' if current_state.stage2 >= 6 else '' }}">Service booked</div>
+            <div class="arrow-container">
+                <span class="arrow">→</span>
+            </div>
+            <div class="state2 {{ 'completed' if current_state.stage2 == 7 else '' }}">Order completed</div>
+        </div>
+    </div>
+
+    <!-- Progress chart -->
+    <div class="sc-gauge">
+        <div class="sc-background">
+            <div class="sc-percentage" style="transform: rotate({{ (current_state.episode / 200) * 180 }}deg);"></div>
+            <div class="sc-mask"></div>
+            <span class="sc-value">{{ current_state.episode/2 }}%</span>
+        </div>
+        <span class="sc-min">0</span>
+        <span class="sc-max">100</span>
+    </div>
+    <div class="training-info">
+        <h3>Training in process</h3>
+    </div>
+
+    <!-- SSE script -->
+    <script>
+        const eventSource = new EventSource("/stream");
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+
+            // Update state info
+            document.getElementById("action1").innerText = data.current_state.action1;
+            document.getElementById("reward1").innerText = data.current_state.reward1;
+            document.getElementById("stage1").innerText = data.current_state.stage1;
+            document.getElementById("action2").innerText = data.current_state.action2;
+            document.getElementById("reward2").innerText = data.current_state.reward2;
+            document.getElementById("stage2").innerText = data.current_state.stage2;
+
+            // Update weather info
+            let weatherSymbol = "";
+            if (data.current_weather.weather_type === "Rain") {
+                weatherSymbol = "&#127783;";
+            } else if (data.current_weather.weather_type === "Sun") {
+                weatherSymbol = "&#9728;";
+            }
+            document.getElementById("weather-type").innerHTML = `${weatherSymbol} ${data.current_weather.weather_type}`;
+            document.getElementById("car-coef").innerText = data.current_weather.car_coef;
+            document.getElementById("train-coef").innerText = data.current_weather.train_coef;
+            document.getElementById("plane-coef").innerText = data.current_weather.plane_coef;
+            document.getElementById("weather-time").innerText = data.current_weather.time;
+
+            // Update progress chart
+            const episode = data.current_state.episode;
+            const rotation = (episode / 200) * 180;
+            document.querySelector(".sc-percentage").style.transform = `rotate(${rotation}deg)`;
+            document.querySelector(".sc-value").innerText = `${episode/2}%`;
+
+            // Update dynamic graph coloring
+            const stages1 = document.querySelectorAll(".state1");
+            stages1.forEach((stage1, index) => {
+                if (
+                    (index <= data.current_state.stage1 && index != 4 && index != 5) ||
+                    (index == 3 && (data.current_state.stage1 >= 3 && data.current_state.stage1 <= 5)) ||
+                    (index == 4 && data.current_state.stage1 >= 6) ||
+                    (index == 5 && data.current_state.stage1 >= 7)
+                ) {
+                    stage1.classList.add("completed");
+                } else {
+                    stage1.classList.remove("completed");
+                }
+            });
+
+            const stages2 = document.querySelectorAll(".state2");
+            stages2.forEach((stage2, index) => {
+                if (
+                    (index <= data.current_state.stage2 && index != 4 && index != 5) ||
+                    (index == 3 && (data.current_state.stage2 >= 3 && data.current_state.stage2 <= 5)) ||
+                    (index == 4 && data.current_state.stage2 >= 6) ||
+                    (index == 5 && data.current_state.stage2 >= 7)
+                ) {
+                    stage2.classList.add("completed");
+                } else {
+                    stage2.classList.remove("completed");
+                }
+            });
+
+            // Update booking info (Added this section to ensure it updates correctly)
+            document.getElementById("transport1").innerText = data.current_booking.transport1;
+            document.getElementById("status1").innerText = data.current_booking.status1;
+            document.getElementById("transport2").innerText = data.current_booking.transport2;
+            document.getElementById("status2").innerText = data.current_booking.status2;
+        };
+    </script>
+</body>
+</html>
